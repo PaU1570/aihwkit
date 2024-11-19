@@ -25,6 +25,9 @@ template <typename T> struct MixedPrecRPUDeviceBaseMetaParameter : SimpleRPUDevi
   int transfer_every = 1;       // set once per mini-batch
   int n_rows_per_transfer = -1; // -1 means full array
   bool random_row = false;
+  AsymmetricPulseType asymmetric_pulsing_dir = AsymmetricPulseType::None;
+  int asymmetric_pulsing_up = 1;
+  int asymmetric_pulsing_down = 1;
 
   T granularity = 0.0; // will take dw_min from device if zero
 
@@ -54,6 +57,9 @@ template <typename T> struct MixedPrecRPUDeviceBaseMetaParameter : SimpleRPUDevi
     swap(a.granularity, b.granularity);
     swap(a.device_par, b.device_par);
     swap(a.compute_sparsity, b.compute_sparsity);
+    swap(a.asymmetric_pulsing_dir, b.asymmetric_pulsing_dir);
+    swap(a.asymmetric_pulsing_up, b.asymmetric_pulsing_up);
+    swap(a.asymmetric_pulsing_down, b.asymmetric_pulsing_down);
   }
 
   bool setDevicePar(const AbstractRPUDeviceMetaParameter<T> &par);

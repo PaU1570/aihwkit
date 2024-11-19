@@ -17,7 +17,7 @@ from aihwkit.exceptions import ConfigError
 from aihwkit.simulator.parameters.helpers import _PrintableMixin, parameters_to_bindings
 from aihwkit.simulator.parameters.training import UpdateParameters
 from aihwkit.simulator.parameters.io import IOParameters
-from aihwkit.simulator.parameters.enums import VectorUnitCellUpdatePolicy, RPUDataType
+from aihwkit.simulator.parameters.enums import VectorUnitCellUpdatePolicy, RPUDataType, AsymmetricPulseType
 
 if TYPE_CHECKING:
     from aihwkit.simulator.configs.devices import PulsedDevice
@@ -1108,6 +1108,24 @@ class MixedPrecisionCompound(DigitalRankUpdateCell):
 
     stoc_round_d: bool = True
     """Whether to use stochastic rounding in case of quantization of the error d.
+    """
+
+    asymmetric_pulsing_dir: AsymmetricPulseType = AsymmetricPulseType.NONE
+    """Type of asymmetric pulsing to use.
+    """
+
+    asymmetric_pulsing_up: int = 1
+    """Pulse asymmetry in the up direction.
+
+    This paremeter defines how many up pulses are used instead of a single pulse in
+    the ``asymmetric_pulsing_dir`` direction.
+    """
+
+    asymmetric_pulsing_down: int = 1
+    """Pulse asymmetry in the down direction.
+
+    This paremeter defines how many down pulses are used instead of a single pulse in
+    the ``asymmetric_pulsing_dir`` direction.
     """
 
     def as_bindings(self, data_type: RPUDataType) -> Any:

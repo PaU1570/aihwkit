@@ -89,4 +89,9 @@ void declare_utils(py::module &m_devices, py::module &m_tiles) {
       .value("OnePass", RPU::AnalogMVType::OnePass)
       .value("PosNegSeparate", RPU::AnalogMVType::PosNegSeparate)
       .value("PosNegSeparateDigitalSum", RPU::AnalogMVType::PosNegSeparateDigitalSum);
+
+  py::enum_<RPU::AsymmetricPulseType>(m_devices, "AsymmetricPulseType")
+      .value("None", RPU::AsymmetricPulseType::None)
+      .value("Up", RPU::AsymmetricPulseType::Up)
+      .value("Down", RPU::AsymmetricPulseType::Down);
 };

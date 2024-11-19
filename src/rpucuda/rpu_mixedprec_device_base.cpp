@@ -48,6 +48,19 @@ void MixedPrecRPUDeviceBaseMetaParameter<T>::printToStream(std::stringstream &ss
     ss << "\t compute_sparsity: \t" << compute_sparsity << std::endl;
   }
 
+  if (asymmetric_pulsing_dir == AsymmetricPulseType::Up) {
+    ss << "\t asymmetric_pulsing_dir:\tUP." << std::endl;
+  } else if (asymmetric_pulsing_dir == AsymmetricPulseType::Down) {
+    ss << "\t asymmetric_pulsing_dir:\tDOWN" << std::endl;
+  } else {
+    ss << "\t asymmetric_pulsing_dir:\tNONE" << std::endl;
+  }
+
+  if (asymmetric_pulsing_dir != AsymmetricPulseType::None) {
+    ss << "\t asymmetric_pulsing_up:  \t" << asymmetric_pulsing_up << std::endl;
+    ss << "\t asymmetric_pulsing_down:\t" << asymmetric_pulsing_down << std::endl;
+  }
+
   if (device_par) {
     ss << "\t\bDevice Parameter: " << device_par->getName() << std::endl;
     ss << "   ";
@@ -79,6 +92,9 @@ MixedPrecRPUDeviceBaseMetaParameter<T>::MixedPrecRPUDeviceBaseMetaParameter(
   random_row = other.random_row;
   granularity = other.granularity;
   compute_sparsity = other.compute_sparsity;
+  asymmetric_pulsing_dir = other.asymmetric_pulsing_dir;
+  asymmetric_pulsing_up = other.asymmetric_pulsing_up;
+  asymmetric_pulsing_down = other.asymmetric_pulsing_down;
 }
 
 // copy assignment
@@ -113,6 +129,9 @@ MixedPrecRPUDeviceBaseMetaParameter<T> &MixedPrecRPUDeviceBaseMetaParameter<T>::
   random_row = other.random_row;
   granularity = other.granularity;
   compute_sparsity = other.compute_sparsity;
+  asymmetric_pulsing_dir = other.asymmetric_pulsing_dir;
+  asymmetric_pulsing_up = other.asymmetric_pulsing_up;
+  asymmetric_pulsing_down = other.asymmetric_pulsing_down;
 
   return *this;
 }

@@ -335,6 +335,25 @@ class AnalogMVType(Enum):
         Only supported for ``TorchInferenceRPUConfigIRDropT``
     """
 
+class AsymmetricPulseType(Enum):
+    """Asymmetric pulse type."""
+
+    NONE = "None"
+    """Do not use asymmetric pulses."""
+
+    UP = "Up"
+    """Use asymmetric pulsing in the up direction.
+    
+    Each up pulse becomes a number of up pulses
+    followed by a number of down pulses.
+    """
+
+    DOWN = "Down"
+    """Use asymmetric pulsing in the down direction.
+
+    Each down pulse becomes a number of down pulses
+    followed by a number of up pulses.
+    """    
 
 # legacy
 class CountLRFeedbackPolicy(Enum):

@@ -787,6 +787,9 @@ template <typename T> void declare_rpu_devices(py::module &m, std::string type_n
       .def_readwrite("stoc_round_d", &MixedPrecParam::stoc_round_d)
       .def_readwrite("stoc_round_x", &MixedPrecParam::stoc_round_x)
       .def_readwrite("transfer_lr", &MixedPrecParam::transfer_lr)
+      .def_readwrite("asymmetric_pulsing_dir", &MixedPrecParam::asymmetric_pulsing_dir)
+      .def_readwrite("asymmetric_pulsing_up", &MixedPrecParam::asymmetric_pulsing_up)
+      .def_readwrite("asymmetric_pulsing_down", &MixedPrecParam::asymmetric_pulsing_down)
       .def(
           "set_device_parameter",
           [](MixedPrecParam &self, const RPU::AbstractRPUDeviceMetaParameter<T> &dp) {

@@ -47,6 +47,12 @@ enum class AnalogMVType {
   BitWise
 };
 
+enum class AsymmetricPulseType {
+  None,
+  Up,
+  Down
+};
+
 template <typename T> struct IOMetaParameter {
   bool _par_initialized = false;
 
