@@ -167,6 +167,8 @@ protected:
   std::unique_ptr<PulsedRPUWeightUpdater<T>> transfer_pwu_ = nullptr;
   T granularity_ = 0.0f;
   std::vector<T> transfer_tmp_;
+  std::vector<T> transfer_tmp_pos_;
+  std::vector<T> transfer_tmp_neg_;
   RealWorldRNG<T> rw_rng_{0};
   RNG<T> rng_{0};
 

@@ -4,7 +4,7 @@
 #
 # Licensed under the MIT license. See LICENSE file in the project root for details.
 
-"""aihwkit example 12: simple network with one layer using Mixed Precision learning rule.
+"""aihwkit example 33: simple network with one layer using Mixed Precision learning rule and asymmetric update.
 
 Mixed precision is based on the paper Nandakumar et al (2020) (see
 https://www.frontiersin.org/articles/10.3389/fnins.2020.00406/full).
@@ -21,8 +21,6 @@ from aihwkit.optim import AnalogSGD
 from aihwkit.simulator.configs import (
     DigitalRankUpdateRPUConfig,
     MixedPrecisionCompound,
-    SoftBoundsDevice,
-    SoftBoundsReferenceDevice,
     PiecewiseStepDevice
 )
 from aihwkit.simulator.rpu_base import cuda
@@ -37,11 +35,11 @@ y = Tensor([[1.0, 0.5], [0.7, 0.3]])
 # devices. We use the relevant RPU config for using a digital rank
 # update and transfer to analog device (like in mixed precision) and
 # set it to a mixed precision compound which in turn uses a
-# ConstantStep analog device:
+# PiecewiseStep analog device:
 rpu_config = DigitalRankUpdateRPUConfig(device=MixedPrecisionCompound(
                                                 asymmetric_pulsing_dir=AsymmetricPulseType.UP,
-                                                asymmetric_pulsing_up=1,
-                                                asymmetric_pulsing_down=2,
+                                                asymmetric_pulsing_up=2,
+                                                asymmetric_pulsing_down=1,
                                                 device=PiecewiseStepDevice(
                                                 construction_seed=2024,
                                                 dw_min=0.10365738941762762,
@@ -158,3 +156,5 @@ for epoch in range(500):
 
     opt.step()
     print("{}: Loss error: {:.16f}".format(epoch, loss), end="\r" if epoch % 50 else "\n")
+
+print(model.get_weights())

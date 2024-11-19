@@ -163,9 +163,19 @@ void MixedPrecRPUDevice<T>::forwardUpdate(
     this->transfer_tmp_.resize(this->x_size_);
   }
 
+  if (this->transfer_tmp_pos_.size() < (size_t)this->x_size_) {
+    this->transfer_tmp_pos_.resize(this->x_size_);
+  }
+
+  if (this->transfer_tmp_neg_.size() < (size_t)this->x_size_) {
+    this->transfer_tmp_neg_.resize(this->x_size_);
+  }
+
   if (this->granularity_ <= (T)0.0) {
     RPU_FATAL("Granularity cannot be zero!");
   }
+
+  const auto &par = getPar();
 
   // forward / update
   for (size_t j = 0; j < (size_t)n_vec; j++) {
@@ -176,12 +186,42 @@ void MixedPrecRPUDevice<T>::forwardUpdate(
       T value = chi_row[i];
       T dw = (T)truncf(value / this->granularity_);
       this->transfer_tmp_[i] = dw;
+      this->transfer_tmp_pos_[i] = (dw > 0) ? dw : 0;
+      this->transfer_tmp_neg_[i] = (dw < 0) ? dw : 0;
       chi_row[i] = value - dw * this->granularity_;
     }
 
-    this->transfer_pwu_->updateVectorWithDevice(
-        weights, this->transfer_tmp_.data(), 1, transfer_d_vec + (size_t)this->d_size_ * j, 1,
-        this->granularity_ * lr, n_vec, &*this->rpu_device_);
+    if (par.asymmetric_pulsing_dir == AsymmetricPulseType::None) {
+      this->transfer_pwu_->updateVectorWithDevice(
+          weights, this->transfer_tmp_.data(), 1, transfer_d_vec + (size_t)this->d_size_ * j, 1,
+          this->granularity_ * lr, n_vec, &*this->rpu_device_);
+    } else {
+      for (size_t i = 0; i < (size_t)this->x_size_; i++) {
+        if (par.asymmetric_pulsing_dir == AsymmetricPulseType::Up) {
+          // positive pulses remain the same while negative pulses get replaced with a mix of positive and negative pulses
+          this->transfer_tmp_pos_[i] -= this->transfer_tmp_neg_[i] * par.asymmetric_pulsing_down;
+          this->transfer_tmp_neg_[i] *= par.asymmetric_pulsing_up;
+        } else {
+          // negative pulses remain the same while positive pulses get replaced with a mix of positive and negative pulses
+          this->transfer_tmp_neg_[i] -= this->transfer_tmp_pos_[i] * par.asymmetric_pulsing_up;
+          this->transfer_tmp_pos_[i] *= par.asymmetric_pulsing_down;
+        }
+      }
+      const T *first_sequence = par.asymmetric_pulsing_dir == AsymmetricPulseType::Down
+                                    ? this->transfer_tmp_pos_.data()
+                                    : this->transfer_tmp_neg_.data();
+      const T *second_sequence = par.asymmetric_pulsing_dir == AsymmetricPulseType::Down
+                                     ? this->transfer_tmp_neg_.data()
+                                     : this->transfer_tmp_pos_.data();
+
+      this->transfer_pwu_->updateVectorWithDevice(
+          weights, first_sequence, 1, transfer_d_vec + (size_t)this->d_size_ * j, 1,
+          this->granularity_ * lr, n_vec, &*this->rpu_device_);
+      this->transfer_pwu_->updateVectorWithDevice(
+          weights, second_sequence, 1, transfer_d_vec + (size_t)this->d_size_ * j, 1,
+          this->granularity_ * lr, n_vec, &*this->rpu_device_);
+    } 
+
   }
 }
 
