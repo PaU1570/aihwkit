@@ -427,6 +427,21 @@ template <typename T> void RPUPulsed<T>::setFBParameter(FBParameter<T> &fb_pars)
   fb_pass_->setFBParameter(fb_pars);
 };
 
+template <typename T> void RPUPulsed<T>::getTotalPulses(uint64_t* pulseptr) const {
+  uint64_t *p = this->getTotalPulsesPtr()[0];
+  memcpy(pulseptr, p, sizeof(uint64_t) * this->x_size_ * this->d_size_);
+}
+
+template <typename T> void RPUPulsed<T>::getTotalPositivePulses(uint64_t* pulseptr) const {
+  uint64_t *p = this->getPositivePulsesPtr()[0];
+  memcpy(pulseptr, p, sizeof(uint64_t) * this->x_size_ * this->d_size_);
+}
+
+template <typename T> void RPUPulsed<T>::getTotalNegativePulses(uint64_t* pulseptr) const {
+  uint64_t *p = this->getNegativePulsesPtr()[0];
+  memcpy(pulseptr, p, sizeof(uint64_t) * this->x_size_ * this->d_size_);
+}
+
 /*********************************************************************************/
 /* dump / load state */
 
@@ -523,7 +538,7 @@ void RPUPulsed<T>::updateVector(const T *x_input, const T *d_input, int x_inc, i
     pwu_->updateVectorWithDevice(
         this->getUpWeights(), x_input, x_inc, d_input, d_inc, this->getAlphaLearningRate(),
         this->last_update_m_batch_, // for info
-        &*rpu_device_);
+        &*rpu_device_, this->getTotalPulsesPtr(), this->getPositivePulsesPtr(), this->getNegativePulsesPtr());
   }
 }
 

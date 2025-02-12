@@ -455,3 +455,6 @@ class RPUCudaSimulatorTileWrapper(SimulatorTileWrapper):
             self.tile.diffuse_weights()
         if self.rpu_config.device.requires_decay():
             self.tile.decay_weights()
+
+    def get_total_pulses(self) -> int:
+        return self.tile.get_total_pulses()

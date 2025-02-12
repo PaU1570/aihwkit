@@ -38,7 +38,11 @@ inline void update_once(
     const std::vector<T> &piecewise_down_vec,
     const T &dw_min_std,
     const T &write_noise_std,
-    RNG<T> *rng) {
+    RNG<T> *rng,
+    uint64_t &total_pulses,
+    uint64_t &total_positive_pulses,
+    uint64_t &total_negative_pulses
+  ) {
 
   size_t n_sections = piecewise_up_vec.size() - 1;
 
@@ -77,13 +81,22 @@ inline void update_once(
   if (write_noise_std > (T)0.0) {
     w_apparent = w + write_noise_std * rng->sampleGauss();
   }
+
+  // increment pulse counter
+  total_pulses++;
+  if (sign > 0) {
+    total_positive_pulses++;
+  } else {
+    total_negative_pulses++;
+  }
 }
 
 } // namespace
 
 template <typename T>
 void PiecewiseStepRPUDevice<T>::doSparseUpdate(
-    T **weights, int i, const int *x_signed_indices, int x_count, int d_sign, RNG<T> *rng) {
+    T **weights, int i, const int *x_signed_indices, int x_count, int d_sign, RNG<T> *rng,
+    uint64_t **pulses, uint64_t **positive_pulses, uint64_t **negative_pulses) {
 
   const auto &par = getPar();
 
@@ -95,14 +108,22 @@ void PiecewiseStepRPUDevice<T>::doSparseUpdate(
   T *max_bound = this->w_max_bound_[i];
   T write_noise_std = par.getScaledWriteNoise();
 
+  if (pulses == nullptr || positive_pulses == nullptr || negative_pulses == nullptr) {
+    RPU_FATAL("Pulses need to be provided for PiecewiseStepRPUDevice");
+  }
+  uint64_t *tp = pulses[i];
+  uint64_t *pp = positive_pulses[i];
+  uint64_t *np = negative_pulses[i];
+
   PULSED_UPDATE_W_LOOP(update_once(
                            w[j], w_apparent[j], sign, scale_down[j], scale_up[j], min_bound[j],
                            max_bound[j], par.piecewise_up_vec, par.piecewise_down_vec,
-                           par.dw_min_std, write_noise_std, rng););
+                           par.dw_min_std, write_noise_std, rng, tp[j], pp[j], np[j]););
 }
 
 template <typename T>
-void PiecewiseStepRPUDevice<T>::doDenseUpdate(T **weights, int *coincidences, RNG<T> *rng) {
+void PiecewiseStepRPUDevice<T>::doDenseUpdate(T **weights, int *coincidences, RNG<T> *rng,
+  uint64_t **pulses, uint64_t **positive_pulses, uint64_t **negative_pulses) {
 
   const auto &par = getPar();
 
@@ -114,10 +135,19 @@ void PiecewiseStepRPUDevice<T>::doDenseUpdate(T **weights, int *coincidences, RN
   T *max_bound = this->w_max_bound_[0];
   T write_noise_std = par.getScaledWriteNoise();
 
+  if (pulses == nullptr || positive_pulses == nullptr || negative_pulses == nullptr) {
+    RPU_FATAL("Pulses need to be provided for PiecewiseStepRPUDevice");
+  }
+
+  uint64_t *tp = pulses[0];
+  uint64_t *pp = positive_pulses[0];
+  uint64_t *np = negative_pulses[0];
+
   PULSED_UPDATE_W_LOOP_DENSE(update_once(
                                  w[j], w_apparent[j], sign, scale_down[j], scale_up[j],
                                  min_bound[j], max_bound[j], par.piecewise_up_vec,
-                                 par.piecewise_down_vec, par.dw_min_std, write_noise_std, rng););
+                                 par.piecewise_down_vec, par.dw_min_std, write_noise_std, rng,
+                                 tp[j], pp[j], np[j]););
 }
 
 template class PiecewiseStepRPUDevice<float>;

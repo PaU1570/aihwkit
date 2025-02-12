@@ -28,8 +28,11 @@ template <typename T> struct MixedPrecRPUDeviceBaseMetaParameter : SimpleRPUDevi
   AsymmetricPulseType asymmetric_pulsing_dir = AsymmetricPulseType::None;
   int asymmetric_pulsing_up = 1;
   int asymmetric_pulsing_down = 1;
+  bool asymmetric_granularity = false;
 
   T granularity = 0.0; // will take dw_min from device if zero
+  T granularity_up = 0.0;
+  T granularity_down = 0.0;
 
   bool compute_sparsity = false;
 
@@ -60,6 +63,9 @@ template <typename T> struct MixedPrecRPUDeviceBaseMetaParameter : SimpleRPUDevi
     swap(a.asymmetric_pulsing_dir, b.asymmetric_pulsing_dir);
     swap(a.asymmetric_pulsing_up, b.asymmetric_pulsing_up);
     swap(a.asymmetric_pulsing_down, b.asymmetric_pulsing_down);
+    swap(a.asymmetric_granularity, b.asymmetric_granularity);
+    swap(a.granularity_up, b.granularity_up);
+    swap(a.granularity_down, b.granularity_down);
   }
 
   bool setDevicePar(const AbstractRPUDeviceMetaParameter<T> &par);
@@ -148,24 +154,41 @@ public:
 protected:
   void populate(const MixedPrecRPUDeviceBaseMetaParameter<T> &par, RealWorldRNG<T> *rng);
   void computeSparsity(const int kx, const int kd);
-  virtual void transfer(T **weights, const T lr);
+  virtual void transfer(T **weights, const T lr, uint64_t **total_pulses, uint64_t **positive_pulses, uint64_t **negative_pulses);
   virtual void forwardUpdate(
       T **weights,
       const T lr,
       int i_row_start,
       const T *transfer_vec,
       const int n_vec,
-      const bool trans) {
+      const bool trans,
+      uint64_t **total_pulses,
+      uint64_t **positive_pulses,
+      uint64_t **negative_pulses
+    ) {
     RPU_NOT_IMPLEMENTED;
   };
-
-  void doTransfer(T **weights, const T lr, const int m_batch_info);
+  virtual void forwardUpdate(
+      T **weights,
+      const T lr,
+      int i_row_start,
+      const T *transfer_vec,
+      const int n_vec,
+      const bool) {
+    forwardUpdate(weights, lr, i_row_start, transfer_vec, n_vec, false, nullptr, nullptr, nullptr);
+  };
+  void doTransfer(T **weights, const T lr, const int m_batch_info, uint64_t **total_pulses, uint64_t **positive_pulses, uint64_t **negative_pulses);
+  void doTransfer(T **weights, const T lr, const int m_batch_info) {
+    doTransfer(weights, lr, m_batch_info, nullptr, nullptr, nullptr);
+  };
   void setUpPar(const PulsedUpdateMetaParameter<T> &up);
   inline void advanceUpdateCounter() { current_update_index_++; };
 
   std::unique_ptr<AbstractRPUDevice<T>> rpu_device_ = nullptr;
   std::unique_ptr<PulsedRPUWeightUpdater<T>> transfer_pwu_ = nullptr;
   T granularity_ = 0.0f;
+  T granularity_up_ = 0.0f;
+  T granularity_down_ = 0.0f;
   std::vector<T> transfer_tmp_;
   std::vector<T> transfer_tmp_pos_;
   std::vector<T> transfer_tmp_neg_;

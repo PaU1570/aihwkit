@@ -79,6 +79,17 @@ your research, please cite the AICAS21 paper that describes the toolkit:
 > analog crossbar arrays"](https://ieeexplore.ieee.org/abstract/document/9458494) (2021 IEEE 3rd International Conference on Artificial Intelligence Circuits and Systems)
 >
 
+## About this fork
+This fork is part of my master's thesis. It implements two extra features:
+### Asymmetric Pulsing
+For the mixed-precision architecture, it is possible to replace pulses in one direction with a number of pulses in that direction followed by some other number of pulses in the opposite direction. For example, each 'up' pulse could be replaced by one 'up' followed by 2 'down'.
+This can be done by setting the `asymmetric_pulsing_dir`, `asymmetric_pulsing_up`, and `asymmetric_pulsing_down` parameters of `MixedPrecisionCompound`
+
+### Mixed-precision with multiple thresholds
+This feature makes it possible to use two different granularities/thresholds for the mixed-precision architecture; one for weight updates in the positive direction and one for the negative direction. This is done by setting `asymmetric_granularity=True` in `MixedPrecisionCompound` and setting the `granularity_up` and `granularity_down` parameters.
+
+The two features can be used at the same time.
+
 ## Usage
 
 ### Training example

@@ -20,8 +20,15 @@ template <typename T>
 void MixedPrecRPUDeviceBaseMetaParameter<T>::printToStream(std::stringstream &ss) const {
 
   if (granularity > (T)0.0) {
-    ss << "\t granularity: \t\t";
-    ss << granularity << std::endl;
+    if (!asymmetric_granularity) {
+      ss << "\t granularity: \t\t";
+      ss << granularity << std::endl;
+    } else {
+      ss << "\t granularity_up: \t";
+      ss << granularity_up << std::endl;
+      ss << "\t granularity_down: \t";
+      ss << granularity_down << std::endl;
+    }
   }
 
   if (n_rows_per_transfer != 0) {
@@ -95,6 +102,9 @@ MixedPrecRPUDeviceBaseMetaParameter<T>::MixedPrecRPUDeviceBaseMetaParameter(
   asymmetric_pulsing_dir = other.asymmetric_pulsing_dir;
   asymmetric_pulsing_up = other.asymmetric_pulsing_up;
   asymmetric_pulsing_down = other.asymmetric_pulsing_down;
+  asymmetric_granularity = other.asymmetric_granularity;
+  granularity_up = other.granularity_up;
+  granularity_down = other.granularity_down;
 }
 
 // copy assignment
@@ -132,6 +142,9 @@ MixedPrecRPUDeviceBaseMetaParameter<T> &MixedPrecRPUDeviceBaseMetaParameter<T>::
   asymmetric_pulsing_dir = other.asymmetric_pulsing_dir;
   asymmetric_pulsing_up = other.asymmetric_pulsing_up;
   asymmetric_pulsing_down = other.asymmetric_pulsing_down;
+  asymmetric_granularity = other.asymmetric_granularity;
+  granularity_up = other.granularity_up;
+  granularity_down = other.granularity_down;
 
   return *this;
 }
@@ -245,15 +258,29 @@ void MixedPrecRPUDeviceBase<T>::populate(
       RPU::make_unique<PulsedRPUWeightUpdater<T>>(this->x_size_, this->d_size_, shared_rng);
 
   granularity_ = 0.0;
-  if (dynamic_cast<PulsedRPUDeviceBase<T> *>(&*rpu_device_) != nullptr) {
-    granularity_ = dynamic_cast<PulsedRPUDeviceBase<T> *>(&*rpu_device_)->getWeightGranularity();
-  }
-  if (par.granularity > (T)0.0) {
-    // overwrites
-    granularity_ = par.granularity;
-  }
-  if (granularity_ <= (T)0.0) {
-    RPU_FATAL("Cannot establish granularity from device. Need explicit setting >=0.");
+  granularity_up_ = 0.0;
+  granularity_down_ = 0.0;
+  if (!par.asymmetric_granularity) {
+    if (dynamic_cast<PulsedRPUDeviceBase<T> *>(&*rpu_device_) != nullptr) {
+      granularity_ = dynamic_cast<PulsedRPUDeviceBase<T> *>(&*rpu_device_)->getWeightGranularity();
+    }
+    if (par.granularity > (T)0.0) {
+      // overwrites
+      granularity_ = par.granularity;
+    }
+    if (granularity_ <= (T)0.0) {
+      RPU_FATAL("Cannot establish granularity from device. Need explicit setting >=0.");
+    }
+  } else {
+    if (par.granularity_up > (T)0.0) {
+      granularity_up_ = par.granularity_up;
+    }
+    if (par.granularity_down > (T)0.0) {
+      granularity_down_ = par.granularity_down;
+    }
+    if (granularity_up_ <= (T)0.0 || granularity_down_ <= (T)0.0) {
+      RPU_FATAL("Cannot establish asymmetric granularity from device. Need explicit setting >=0.");
+    }
   }
 }
 
@@ -298,11 +325,11 @@ void MixedPrecRPUDeviceBase<T>::loadExtra(
 /* transfer */
 
 template <typename T>
-void MixedPrecRPUDeviceBase<T>::doTransfer(T **weights, const T lr, const int m_batch_info) {
+void MixedPrecRPUDeviceBase<T>::doTransfer(T **weights, const T lr, const int m_batch_info, uint64_t **total_pulses, uint64_t **positive_pulses, uint64_t **negative_pulses) {
   const auto &par = getPar();
   int every = par.transfer_every * m_batch_info;
   if (every > 0 && current_update_index_ > 0 && (current_update_index_ % every == 0)) {
-    transfer(weights, lr);
+    transfer(weights, lr, total_pulses, positive_pulses, negative_pulses);
   }
 }
 
@@ -328,7 +355,7 @@ template <typename T> void MixedPrecRPUDeviceBase<T>::computeSparsity(const int 
   }
 }
 
-template <typename T> void MixedPrecRPUDeviceBase<T>::transfer(T **weights, const T lr) {
+template <typename T> void MixedPrecRPUDeviceBase<T>::transfer(T **weights, const T lr, uint64_t **total_pulses, uint64_t **positive_pulses, uint64_t **negative_pulses) {
   // updating the matrix with rows of using one-hot transfer vectors
 
   const auto &par = getPar();
@@ -360,12 +387,12 @@ template <typename T> void MixedPrecRPUDeviceBase<T>::transfer(T **weights, cons
 
   if (n_rest < n_transfers) {
     // rest
-    forwardUpdate(weights, lr, i_row, tvec, n_rest, false);
+    forwardUpdate(weights, lr, i_row, tvec, n_rest, false, total_pulses, positive_pulses, negative_pulses);
     // from beginning
-    forwardUpdate(weights, lr, 0, transfer_d_vecs_.data(), n_transfers - n_rest, false);
+    forwardUpdate(weights, lr, 0, transfer_d_vecs_.data(), n_transfers - n_rest, false, total_pulses, positive_pulses, negative_pulses);
 
   } else {
-    forwardUpdate(weights, lr, i_row, tvec, n_transfers, false);
+    forwardUpdate(weights, lr, i_row, tvec, n_transfers, false, total_pulses, positive_pulses, negative_pulses);
   }
   current_row_index_ = (i_row + n_transfers) % this->d_size_;
 }

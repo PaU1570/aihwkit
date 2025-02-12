@@ -116,7 +116,10 @@ public:
       int i_row_start,
       const T *transfer_vec,
       const int n_vec,
-      const bool trans) override;
+      const bool trans,
+      uint64_t **total_pulses,
+      uint64_t **positive_pulses,
+      uint64_t **negative_pulses) override;
 
   void doDirectVectorUpdate(
       T **weights,
@@ -126,7 +129,10 @@ public:
       const int d_inc,
       const T learning_rate,
       const int m_batch_info,
-      const PulsedUpdateMetaParameter<T> &up) override;
+      const PulsedUpdateMetaParameter<T> &up,
+      uint64_t **total_pulses,
+      uint64_t **positive_pulses,
+      uint64_t **negative_pulses) override;
 
 protected:
   void populate(const MixedPrecRPUDeviceMetaParameter<T> &par, RealWorldRNG<T> *rng);

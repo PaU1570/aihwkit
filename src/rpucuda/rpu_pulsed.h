@@ -99,6 +99,10 @@ public:
   const FBParameter<T> &getFBParameter() const;
   void setFBParameter(FBParameter<T> &fb_pars);
 
+  void getTotalPulses(uint64_t *total_pulses) const override;
+  void getTotalPositivePulses(uint64_t *total_pulses) const override;
+  void getTotalNegativePulses(uint64_t *total_pulses) const override;
+
 protected:
   void forwardVector(const T *x_input, T *d_output, int x_inc, int d_inc, bool is_test) override;
   void backwardVector(const T *d_input, T *x_output, int d_inc = 1, int x_inc = 1) override;

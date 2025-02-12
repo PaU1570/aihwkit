@@ -203,7 +203,10 @@ void PulsedRPUWeightUpdater<T>::updateVectorWithDevice(
     const int d_inc,
     const T learning_rate,
     const int m_batch_info,
-    AbstractRPUDevice<T> *rpu_device_in) {
+    AbstractRPUDevice<T> *rpu_device_in,
+    uint64_t **total_pulses,
+    uint64_t **positive_pulses,
+    uint64_t **negative_pulses) {
   if (!learning_rate) {
     return; // do nothing
   }
@@ -211,7 +214,7 @@ void PulsedRPUWeightUpdater<T>::updateVectorWithDevice(
   // handle cases with no device or FP device
   if (rpu_device_in != nullptr && rpu_device_in->hasDirectUpdate()) {
     rpu_device_in->doDirectVectorUpdate(
-        weights, x_input, x_inc, d_input, d_inc, learning_rate, m_batch_info, up_);
+        weights, x_input, x_inc, d_input, d_inc, learning_rate, m_batch_info, up_, total_pulses, positive_pulses, negative_pulses);
     return;
   } else if (up_.pulse_type == PulseType::NoneWithDevice || checkForFPUpdate(rpu_device_in)) {
 
@@ -270,12 +273,12 @@ void PulsedRPUWeightUpdater<T>::updateVectorWithDevice(
 
             // let rpu_device decide how to update w
             if (x_counts_p[k] > 0) {
-              rpu_device->doSparseUpdate(weights, i, x_indices_p[k], x_counts_p[k], d_sign, &*rng_);
+              rpu_device->doSparseUpdate(weights, i, x_indices_p[k], x_counts_p[k], d_sign, &*rng_, total_pulses, positive_pulses, negative_pulses);
             }
             if (do_negative_separatly) {
               if (x_counts_n[k] > 0) {
                 rpu_device->doSparseUpdate(
-                    weights, i, x_indices_n[k], x_counts_n[k], d_sign, &*rng_);
+                    weights, i, x_indices_n[k], x_counts_n[k], d_sign, &*rng_, total_pulses, positive_pulses, negative_pulses);
               }
             }
           }
@@ -287,7 +290,7 @@ void PulsedRPUWeightUpdater<T>::updateVectorWithDevice(
     int *coincidences = dblm_->makeCoincidences(
         x_input, x_inc, x_noz_, d_input, d_inc, d_noz_, &*rng_, pc_learning_rate,
         weight_granularity, up_);
-    rpu_device->doDenseUpdate(weights, coincidences, &*rng_);
+    rpu_device->doDenseUpdate(weights, coincidences, &*rng_, total_pulses, positive_pulses, negative_pulses);
   }
   // always the current SGD learning rate is given here
   rpu_device->finishUpdateCycle(weights, up_, learning_rate, m_batch_info);
@@ -335,7 +338,10 @@ void PulsedRPUWeightUpdater<T>::updateVectorWithDeviceAndCounts(
     const int m_batch_info,
     PulsedRPUDeviceBase<T> *rpu_device,
     uint32_t *x_counts32,
-    uint32_t *d_counts32) {
+    uint32_t *d_counts32,
+    uint64_t **total_pulses,
+    uint64_t **positive_pulses,
+    uint64_t **negative_pulses) {
 
   // for debugging: use cuda format of counts to update.
   // simply generate some fake bit lines (to setup the memory etc and to get the current BL)
@@ -383,7 +389,7 @@ void PulsedRPUWeightUpdater<T>::updateVectorWithDeviceAndCounts(
           int d_sign = i_signed < 0 ? -lr_sign : lr_sign;
           int i = (i_signed < 0 ? -i_signed : i_signed) - 1;
           if (x_counts_p[k] > 0) {
-            rpu_device->doSparseUpdate(weights, i, x_indices_p[k], x_counts_p[k], d_sign, &*rng_);
+            rpu_device->doSparseUpdate(weights, i, x_indices_p[k], x_counts_p[k], d_sign, &*rng_, total_pulses, positive_pulses, negative_pulses);
           }
         }
       }

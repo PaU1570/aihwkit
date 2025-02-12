@@ -83,7 +83,10 @@ public:
       const int d_inc,
       const T learning_rate,
       const int last_m_batch_info,
-      AbstractRPUDevice<T> *rpu_device);
+      AbstractRPUDevice<T> *rpu_device,
+      uint64_t **total_pulses = nullptr,
+      uint64_t **positive_pulses = nullptr,
+      uint64_t **negative_pulses = nullptr);
 
   void updateVectorWithDeviceAndCounts(
       T **weights,
@@ -95,7 +98,10 @@ public:
       const int last_m_batch_info,
       PulsedRPUDeviceBase<T> *rpu_device,
       uint32_t *x_counts,
-      uint32_t *d_counts);
+      uint32_t *d_counts,
+      uint64_t **total_pulses = nullptr,
+      uint64_t **positive_pulses = nullptr,
+      uint64_t **negative_pulses = nullptr);
 
   void setUpPar(const PulsedUpdateMetaParameter<T> &up);
   inline const PulsedUpdateMetaParameter<T> &getUpPar() const { return up_; };

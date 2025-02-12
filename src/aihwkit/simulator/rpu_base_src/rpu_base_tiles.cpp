@@ -866,7 +866,60 @@ void declare_rpu_tiles(py::module &m, std::string type_name_add) {
            Returns:
                3D tensor: Pulse counters: pos, neg (and for each sub-device)
           )pbdoc")
+      .def(
+          "get_total_pulses",
+          [](Class &self) {
+            auto options = torch::TensorOptions().dtype(torch::kUInt64);
+            torch::Tensor pulses =
+                torch::empty({self.getDSize(), self.getXSize()}, options);
 
+            // Call RPU function.
+            std::lock_guard<std::mutex> lock(self.mutex_);
+            self.getTotalPulses(pulses.data_ptr<uint64_t>());
+            return pulses;
+          },
+          R"pbdoc(
+           Get the total pulses applied to the device.
+
+           Returns:
+               int: total pulses
+          )pbdoc")
+      .def(
+            "get_total_positive_pulses",
+            [](Class &self) {
+              auto options = torch::TensorOptions().dtype(torch::kUInt64);
+              torch::Tensor pulses =
+                  torch::empty({self.getDSize(), self.getXSize()}, options);
+  
+              // Call RPU function.
+              std::lock_guard<std::mutex> lock(self.mutex_);
+              self.getTotalPositivePulses(pulses.data_ptr<uint64_t>());
+              return pulses;
+            },
+            R"pbdoc(
+             Get the total positive pulses applied to the device.
+  
+             Returns:
+                 int: total positive pulses
+            )pbdoc")
+      .def(
+            "get_total_negative_pulses",
+            [](Class &self) {
+              auto options = torch::TensorOptions().dtype(torch::kUInt64);
+              torch::Tensor pulses =
+                  torch::empty({self.getDSize(), self.getXSize()}, options);
+  
+              // Call RPU function.
+              std::lock_guard<std::mutex> lock(self.mutex_);
+              self.getTotalPositivePulses(pulses.data_ptr<uint64_t>());
+              return pulses;
+            },
+            R"pbdoc(
+             Get the total negative pulses applied to the device.
+  
+             Returns:
+                 int: total negative pulses
+            )pbdoc")
       ;
 
   py::class_<ClassPulsed, Class>(

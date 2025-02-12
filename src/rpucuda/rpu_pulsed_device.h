@@ -152,6 +152,23 @@ public:
   virtual void doDenseUpdate(T **weights, int *coincidences, RNG<T> *rng) {
     RPU_FATAL("Dense update not available for this device!");
   };
+  virtual void doSparseUpdate(
+      T **weights, int i, const int *x_signed_indices, int x_count, int d_sign, RNG<T> *rng,
+      uint64_t **pulses, uint64_t **positive_pulses, uint64_t **negative_pulses) {
+        if (pulses == nullptr || positive_pulses == nullptr || negative_pulses == nullptr) {
+          doSparseUpdate(weights, i, x_signed_indices, x_count, d_sign, rng);
+        } else {
+          RPU_FATAL("Sparse update with pulse counting not available for this device!");
+        }
+  };
+  virtual void doDenseUpdate(T **weights, int *coincidences, RNG<T> *rng,
+      uint64_t **pulses, uint64_t **positive_pulses, uint64_t **negative_pulses) {
+        if (pulses == nullptr || positive_pulses == nullptr || negative_pulses == nullptr) {
+          doDenseUpdate(weights, coincidences, rng);
+        } else {
+          RPU_FATAL("Dense update with pulse counting not available for this device!");
+        }
+  };
   // for Meta-devices [like vector/transfer]: called once before each update starts
   virtual void initUpdateCycle(
       T **weights,

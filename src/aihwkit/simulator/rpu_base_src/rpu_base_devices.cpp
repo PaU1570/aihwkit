@@ -790,6 +790,9 @@ template <typename T> void declare_rpu_devices(py::module &m, std::string type_n
       .def_readwrite("asymmetric_pulsing_dir", &MixedPrecParam::asymmetric_pulsing_dir)
       .def_readwrite("asymmetric_pulsing_up", &MixedPrecParam::asymmetric_pulsing_up)
       .def_readwrite("asymmetric_pulsing_down", &MixedPrecParam::asymmetric_pulsing_down)
+      .def_readwrite("asymmetric_granularity", &MixedPrecParam::asymmetric_granularity)
+      .def_readwrite("granularity_up", &MixedPrecParam::granularity_up)
+      .def_readwrite("granularity_down", &MixedPrecParam::granularity_down)
       .def(
           "set_device_parameter",
           [](MixedPrecParam &self, const RPU::AbstractRPUDeviceMetaParameter<T> &dp) {

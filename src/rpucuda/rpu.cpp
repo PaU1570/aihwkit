@@ -247,6 +247,17 @@ template <typename T> void RPUSimple<T>::initialize(int x_sz, int d_sz) {
 
   fwd_alpha_ = (T)1.0;
   bwd_alpha_ = (T)1.0;
+
+  total_pulses_ = Array_2D_Get<uint64_t>(d_sz, x_sz);
+  total_positive_pulses_ = Array_2D_Get<uint64_t>(d_sz, x_sz);
+  total_negative_pulses_ = Array_2D_Get<uint64_t>(d_sz, x_sz);
+  for (int i = 0; i < d_sz; i++) {
+    for (int j = 0; j < x_sz; j++) {
+      total_pulses_[i][j] = 0;
+      total_positive_pulses_[i][j] = 0;
+      total_negative_pulses_[i][j] = 0;
+    }
+  }
 }
 
 /*********************************************************************************/
@@ -1446,6 +1457,21 @@ template <typename T> void RPUSimple<T>::applyWeightUpdate(T *dw_and_current_wei
 template <typename T> void RPUSimple<T>::getWeights(T *weightsptr) const {
   T *w = this->getWeightsPtr()[0];
   memcpy(weightsptr, w, sizeof(T) * this->x_size_ * this->d_size_);
+}
+
+template <typename T> void RPUSimple<T>::getTotalPulses(uint64_t* pulseptr) const {
+  // only for pulsing devices
+  RPU_FATAL("Not implemented for this device.");
+}
+
+template <typename T> void RPUSimple<T>::getTotalPositivePulses(uint64_t* pulseptr) const {
+  // only for pulsing devices
+  RPU_FATAL("Not implemented for this device.");
+}
+
+template <typename T> void RPUSimple<T>::getTotalNegativePulses(uint64_t* pulseptr) const {
+  // only for pulsing devices
+  RPU_FATAL("Not implemented for this device.");
 }
 
 template <typename T> void RPUSimple<T>::setDeltaWeights(T *dw_extern) {

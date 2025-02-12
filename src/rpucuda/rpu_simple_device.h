@@ -183,6 +183,20 @@ public:
       const PulsedUpdateMetaParameter<T> &up) {
     RPU_NOT_IMPLEMENTED;
   };
+  virtual void doDirectVectorUpdate(
+      T **weights,
+      const T *x_input,
+      const int x_inc,
+      const T *d_input,
+      const int d_inc,
+      const T learning_rate,
+      const int m_batch_info,
+      const PulsedUpdateMetaParameter<T> &up,
+      uint64_t **total_pulses,
+      uint64_t **positive_pulses,
+      uint64_t **negative_pulses) {
+    RPU_NOT_IMPLEMENTED;
+  };
 };
 
 /*This re-implements the floating point weight related things to

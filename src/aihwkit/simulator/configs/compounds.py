@@ -1117,16 +1117,29 @@ class MixedPrecisionCompound(DigitalRankUpdateCell):
     asymmetric_pulsing_up: int = 1
     """Pulse asymmetry in the up direction.
 
-    This paremeter defines how many up pulses are used instead of a single pulse in
+    This parameter defines how many up pulses are used instead of a single pulse in
     the ``asymmetric_pulsing_dir`` direction.
     """
 
     asymmetric_pulsing_down: int = 1
     """Pulse asymmetry in the down direction.
 
-    This paremeter defines how many down pulses are used instead of a single pulse in
+    This parameter defines how many down pulses are used instead of a single pulse in
     the ``asymmetric_pulsing_dir`` direction.
     """
+
+    asymmetric_granularity: bool = False
+    """Whether to use different granularities for each weight update direction.
+    
+    If set to true, then granularity_up and granularity_down must be given, which define
+    different granularities for the positive and negative weight updates.
+    """
+
+    granularity_up: float = 0.0
+    """Granularity for the positive weight update direction."""
+
+    granularity_down: float = 0.0
+    """Granularity for the negative weight update direction."""
 
     def as_bindings(self, data_type: RPUDataType) -> Any:
         """Return a representation of this instance as a simulator bindings object."""

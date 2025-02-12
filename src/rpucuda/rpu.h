@@ -292,6 +292,19 @@ public:
      implicitly copy to host (CPU) weights*/
   virtual void getWeights(T *weightsptr) const;
 
+  /* same thing as for weights but for pulses */
+  inline uint64_t **getTotalPulsesPtr() const { return this->total_pulses_; };
+  virtual uint64_t **getTotalPulses() { return getTotalPulsesPtr(); };
+  virtual void getTotalPulses(uint64_t *total_pulses) const;
+
+  inline uint64_t **getPositivePulsesPtr() const { return this->total_positive_pulses_; };
+  virtual uint64_t **getTotalPositivePulses() { return getPositivePulsesPtr(); };
+  virtual void getTotalPositivePulses(uint64_t *total_positive_pulses) const;
+
+  inline uint64_t **getNegativePulsesPtr() const { return this->total_negative_pulses_; };
+  virtual uint64_t **getTotalNegativePulses() { return getNegativePulsesPtr(); };
+  virtual void getTotalNegativePulses(uint64_t *total_negative_pulses) const;
+
   /* methods to get/set the weights using read-write-verify cycles
      with the current definition of analog forward/update*/
   virtual void getWeightsReal(T *weightsptr) { this->getWeights(weightsptr); };
@@ -677,6 +690,10 @@ protected:
 
   int last_update_m_batch_ = 1;
   bool use_delayed_update_ = false;
+
+  uint64_t **total_pulses_ = nullptr;
+  uint64_t **total_positive_pulses_ = nullptr;
+  uint64_t **total_negative_pulses_ = nullptr;
 
 private:
   std::vector<T *> delta_weights_extern_;

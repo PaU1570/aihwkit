@@ -150,7 +150,10 @@ void MixedPrecRPUDevice<T>::forwardUpdate(
     int j_row_start,
     const T *transfer_d_vec,
     const int n_vec,
-    const bool trans) {
+    const bool trans,
+    uint64_t **total_pulses,
+    uint64_t **positive_pulses,
+    uint64_t **negative_pulses) {
 
   if (!lr) { // not used actually
     return;
@@ -171,7 +174,7 @@ void MixedPrecRPUDevice<T>::forwardUpdate(
     this->transfer_tmp_neg_.resize(this->x_size_);
   }
 
-  if (this->granularity_ <= (T)0.0) {
+  if (this->granularity_ <= (T)0.0 && (this->granularity_up_ <= (T)0.0 || this->granularity_down_ <= (T)0.0)) {
     RPU_FATAL("Granularity cannot be zero!");
   }
 
@@ -184,17 +187,27 @@ void MixedPrecRPUDevice<T>::forwardUpdate(
     PRAGMA_SIMD
     for (size_t i = 0; i < (size_t)this->x_size_; i++) {
       T value = chi_row[i];
-      T dw = (T)truncf(value / this->granularity_);
+      T granularity = par.asymmetric_granularity ? ((value > 0) ? this->granularity_up_ : this->granularity_down_) : this->granularity_;
+      T dw = (T)truncf(value / granularity);
       this->transfer_tmp_[i] = dw;
       this->transfer_tmp_pos_[i] = (dw > 0) ? dw : 0;
       this->transfer_tmp_neg_[i] = (dw < 0) ? dw : 0;
-      chi_row[i] = value - dw * this->granularity_;
+      chi_row[i] = value - dw * granularity;
     }
 
     if (par.asymmetric_pulsing_dir == AsymmetricPulseType::None) {
-      this->transfer_pwu_->updateVectorWithDevice(
-          weights, this->transfer_tmp_.data(), 1, transfer_d_vec + (size_t)this->d_size_ * j, 1,
-          this->granularity_ * lr, n_vec, &*this->rpu_device_);
+      if (!par.asymmetric_granularity) {
+        this->transfer_pwu_->updateVectorWithDevice(
+            weights, this->transfer_tmp_.data(), 1, transfer_d_vec + (size_t)this->d_size_ * j, 1,
+            this->granularity_ * lr, n_vec, &*this->rpu_device_, total_pulses, positive_pulses, negative_pulses);
+      } else {
+        this->transfer_pwu_->updateVectorWithDevice(
+          weights, this->transfer_tmp_pos_.data(), 1, transfer_d_vec + (size_t)this->d_size_ * j, 1,
+          this->granularity_up_ * lr, n_vec, &*this->rpu_device_, total_pulses, positive_pulses, negative_pulses);
+        this->transfer_pwu_->updateVectorWithDevice(
+          weights, this->transfer_tmp_neg_.data(), 1, transfer_d_vec + (size_t)this->d_size_ * j, 1,
+          this->granularity_down_ * lr, n_vec, &*this->rpu_device_, total_pulses, positive_pulses, negative_pulses);
+      }
     } else {
       for (size_t i = 0; i < (size_t)this->x_size_; i++) {
         if (par.asymmetric_pulsing_dir == AsymmetricPulseType::Up) {
@@ -213,13 +226,19 @@ void MixedPrecRPUDevice<T>::forwardUpdate(
       const T *second_sequence = par.asymmetric_pulsing_dir == AsymmetricPulseType::Down
                                      ? this->transfer_tmp_neg_.data()
                                      : this->transfer_tmp_pos_.data();
+      const T first_granularity = par.asymmetric_granularity ? (
+        par.asymmetric_pulsing_dir == AsymmetricPulseType::Down ? this->granularity_up_ : this->granularity_down_
+      ) : this->granularity_;
+      const T second_granularity = par.asymmetric_granularity ? (
+        par.asymmetric_pulsing_dir == AsymmetricPulseType::Down ? this->granularity_down_ : this->granularity_up_
+      ) : this->granularity_;
 
       this->transfer_pwu_->updateVectorWithDevice(
           weights, first_sequence, 1, transfer_d_vec + (size_t)this->d_size_ * j, 1,
-          this->granularity_ * lr, n_vec, &*this->rpu_device_);
+          first_granularity * lr, n_vec, &*this->rpu_device_);
       this->transfer_pwu_->updateVectorWithDevice(
           weights, second_sequence, 1, transfer_d_vec + (size_t)this->d_size_ * j, 1,
-          this->granularity_ * lr, n_vec, &*this->rpu_device_);
+          second_granularity * lr, n_vec, &*this->rpu_device_);
     } 
 
   }
@@ -237,7 +256,10 @@ void MixedPrecRPUDevice<T>::doDirectVectorUpdate(
     const int d_inc,
     const T learning_rate,
     const int m_batch_info,
-    const PulsedUpdateMetaParameter<T> &up) {
+    const PulsedUpdateMetaParameter<T> &up,
+    uint64_t **total_pulses,
+    uint64_t **positive_pulses,
+    uint64_t **negative_pulses) {
 
   this->setUpPar(up);
   const auto &par = getPar();
@@ -383,7 +405,7 @@ void MixedPrecRPUDevice<T>::doDirectVectorUpdate(
       }
     }
   }
-  this->doTransfer(weights, par.transfer_lr, m_batch_info);
+  this->doTransfer(weights, par.transfer_lr, m_batch_info, total_pulses, positive_pulses, negative_pulses);
   this->computeSparsity(kx, kd); // will only compute if both are quantized
   this->advanceUpdateCounter();
 }
