@@ -290,6 +290,10 @@ template <typename T> RPUSimple<T>::~RPUSimple() {
 
   matrix_indices_ = nullptr; // memory externally governed
 
+  Array_2D_Free<uint64_t>(total_pulses_);
+  Array_2D_Free<uint64_t>(total_positive_pulses_);
+  Array_2D_Free<uint64_t>(total_negative_pulses_);
+
   DEBUG_OUT("RPUSimple DESTRUCTED");
 }
 

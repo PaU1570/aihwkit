@@ -882,7 +882,7 @@ void declare_rpu_tiles(py::module &m, std::string type_name_add) {
            Get the total pulses applied to the device.
 
            Returns:
-               int: total pulses
+               2D tensor: total pulses
           )pbdoc")
       .def(
             "get_total_positive_pulses",
@@ -900,7 +900,7 @@ void declare_rpu_tiles(py::module &m, std::string type_name_add) {
              Get the total positive pulses applied to the device.
   
              Returns:
-                 int: total positive pulses
+                 2D tensor: total positive pulses
             )pbdoc")
       .def(
             "get_total_negative_pulses",
@@ -911,14 +911,14 @@ void declare_rpu_tiles(py::module &m, std::string type_name_add) {
   
               // Call RPU function.
               std::lock_guard<std::mutex> lock(self.mutex_);
-              self.getTotalPositivePulses(pulses.data_ptr<uint64_t>());
+              self.getTotalNegativePulses(pulses.data_ptr<uint64_t>());
               return pulses;
             },
             R"pbdoc(
              Get the total negative pulses applied to the device.
   
              Returns:
-                 int: total negative pulses
+                 2D tensor: total negative pulses
             )pbdoc")
       ;
 

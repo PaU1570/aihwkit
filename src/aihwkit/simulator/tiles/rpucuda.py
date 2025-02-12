@@ -458,3 +458,9 @@ class RPUCudaSimulatorTileWrapper(SimulatorTileWrapper):
 
     def get_total_pulses(self) -> int:
         return self.tile.get_total_pulses()
+    
+    def get_total_positive_pulses(self) -> int:
+        return self.tile.get_total_positive_pulses()
+    
+    def get_total_negative_pulses(self) -> int:
+        return self.tile.get_total_negative_pulses()
