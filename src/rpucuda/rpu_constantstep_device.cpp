@@ -26,7 +26,8 @@ void ConstantStepRPUDevice<T>::populate(
 
 template <typename T>
 void ConstantStepRPUDevice<T>::doSparseUpdate(
-    T **weights, int i, const int *x_signed_indices, int x_count, int d_sign, RNG<T> *rng) {
+    T **weights, int i, const int *x_signed_indices, int x_count, int d_sign, RNG<T> *rng,
+    uint64_t **pulses, uint64_t **positive_pulses, uint64_t **negative_pulses) {
 
   T *scale_down = this->w_scale_down_[i];
   T *scale_up = this->w_scale_up_[i];
@@ -34,6 +35,10 @@ void ConstantStepRPUDevice<T>::doSparseUpdate(
   T *min_bound = this->w_min_bound_[i];
   T *max_bound = this->w_max_bound_[i];
   T dw_min_std = getPar().dw_min_std;
+
+  uint64_t *tp = pulses[i];
+  uint64_t *pp = positive_pulses[i];
+  uint64_t *np = negative_pulses[i];
 
   if (dw_min_std > (T)0.0) {
     PULSED_UPDATE_W_LOOP(
@@ -44,18 +49,31 @@ void ConstantStepRPUDevice<T>::doSparseUpdate(
           dw = ((T)1.0 + dw_min_std * rng->sampleGauss()) * scale_up[j];
           w[j] += dw;
         } w[j] = MIN(w[j], max_bound[j]);
-        w[j] = MAX(w[j], min_bound[j]););
+        w[j] = MAX(w[j], min_bound[j]);
+        tp[j]++;
+        if (sign > 0) {
+          pp[j]++;
+        } else {
+          np[j]++;
+        });
   } else {
 
     PULSED_UPDATE_W_LOOP(
         if (sign > 0) { w[j] -= scale_down[j]; } else { w[j] += scale_up[j]; } w[j] =
             MIN(w[j], max_bound[j]);
-        w[j] = MAX(w[j], min_bound[j]););
+        w[j] = MAX(w[j], min_bound[j]);
+        tp[j]++;
+        if (sign > 0) {
+          pp[j]++;
+        } else {
+          np[j]++;
+        });
   }
 }
 
 template <typename T>
-void ConstantStepRPUDevice<T>::doDenseUpdate(T **weights, int *coincidences, RNG<T> *rng) {
+void ConstantStepRPUDevice<T>::doDenseUpdate(T **weights, int *coincidences, RNG<T> *rng,
+  uint64_t **pulses, uint64_t **positive_pulses, uint64_t **negative_pulses) {
 
   T *scale_down = this->w_scale_down_[0];
   T *scale_up = this->w_scale_up_[0];
@@ -63,6 +81,10 @@ void ConstantStepRPUDevice<T>::doDenseUpdate(T **weights, int *coincidences, RNG
   T *min_bound = this->w_min_bound_[0];
   T *max_bound = this->w_max_bound_[0];
   T dw_min_std = getPar().dw_min_std;
+
+  uint64_t *tp = pulses[0];
+  uint64_t *pp = positive_pulses[0];
+  uint64_t *np = negative_pulses[0];
 
   PULSED_UPDATE_W_LOOP_DENSE(
       T dw = dw_min_std > (T)0.0 ? dw_min_std * rng->sampleGauss() : (T)0.0; if (sign > 0) {
@@ -73,7 +95,12 @@ void ConstantStepRPUDevice<T>::doDenseUpdate(T **weights, int *coincidences, RNG
         w[j] += dw;
       } w[j] = MIN(w[j], max_bound[j]);
       w[j] = MAX(w[j], min_bound[j]);
-
+      tp[j]++;
+      if (sign > 0) {
+        pp[j]++;
+      } else {
+        np[j]++;
+      }
   );
 }
 

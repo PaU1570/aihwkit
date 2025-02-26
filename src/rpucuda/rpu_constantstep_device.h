@@ -51,8 +51,10 @@ template <typename T> class ConstantStepRPUDevice : public PulsedRPUDevice<T> {
   );
 
   void doSparseUpdate(
-      T **weights, int i, const int *x_signed_indices, int x_count, int d_sign, RNG<T> *rng)
-      override;
-  void doDenseUpdate(T **weights, int *coincidences, RNG<T> *rng) override;
+    T **weights, int i, const int *x_signed_indices, int x_count, int d_sign, RNG<T> *rng,
+    uint64_t **pulses, uint64_t **positive_pulses, uint64_t **negative_pulses)
+    override;
+  void doDenseUpdate(T **weights, int *coincidences, RNG<T> *rng,
+    uint64_t **pulses, uint64_t **positive_pulses, uint64_t **negative_pulses) override;
 };
 } // namespace RPU
